@@ -74,7 +74,7 @@ contract Climatecoin {
 
     //Every now and then, update the global carbon emissions since last update
     //This doesn't have to be on any particular schedule
-    function addEmissions(uint newEmissions, timestamp asOfBlock) {
+    function addEmissions(uint newEmissions, uint asOfBlock) {
 	if (msg.sender == emissionAdmin) {
 	    totalTonnesCarbonEmitted += newEmissions;
 	    lastEmissionUpdate = asOfBlock;
@@ -84,7 +84,7 @@ contract Climatecoin {
     //if we have one offset tonne per 100 emitted tonnes,
     //then one offset tonne gives 100 coins
     //(that's one coin is one tonne, you might want smaller like wei)
-    function coinsPerTonneOffset() {
+    function coinsPerTonneOffset() returns (uint coinsPerTonne) {
 	uint emissionsPerBlock = totalEmissions / (emissionUpdate - emissionStart);
 	uint offsetPerBlock = totalOffsets / (now - coinstart);
 	return emissionsPerBlock / offsetPerBlock;
@@ -94,7 +94,7 @@ contract Climatecoin {
     //start simplified: award one carboncoin for that
     //and let user specify recipient
     //a separate helper contract can select an offsetter automatically
-    function mint(uint amount, address offsetter) {
+    function mint(uint amount, address offsetter) returns (uint coins) {
 	uint price = offsetters[offsetter];
 	uint offset = (transaction.value / price);
 	totalOffset += offset;
@@ -105,6 +105,9 @@ contract Climatecoin {
 
 	Mint(msg.sender, offsetter, offset, coins, amount);
 	return coins;
+    }
+    function totalTonnage(address addr) constant returns (uint tonnesContributed) {
+        return tonnesContributed[addr];
     }
 
     //the usual currency functions
