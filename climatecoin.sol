@@ -33,7 +33,7 @@ contract Climatecoin {
 	emissionAdmin = msg.sender;
 	coinStartTime = now;
 	emissionUpdateTime = now;
-	emissionStartTime = now - (365 * 24 * 3600);
+	emissionStartTime = now - 1 year;
 	totalTonnesCarbonEmitted = 3 * 10^10; //one year emission at contract start
     }
 
