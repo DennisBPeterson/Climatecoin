@@ -3,13 +3,12 @@ contract Climatecoin {
     address offsetterAdmin;
     address emissionAdmin;
 
-    //coin balance for each user
-    mapping (address => uint) balances;
+    struct user {
+	uint balance;
+	uint tonnesContributed; //lifetime total of actual tonnes offset
+    }
 
-    //total actual tonnes carbon offset by each user
-    //If we vote on approved offsetters, tonnesContributed weights the votes
-    //Hopefully this will weight the voting toward actual carbon offsetters
-    mapping (address => uint) tonnesContributed;
+    mapping (address => user) users;
 
     //approved offsetters, each with a price per tonne
     mapping (address => uint) offsetters; 
@@ -76,7 +75,7 @@ contract Climatecoin {
     //This doesn't have to be on any particular schedule
     function addEmissions(uint newEmissions, uint asOfBlock) {
 	if (msg.sender == emissionAdmin) {
-	    totalTonnesCarbonEmitted += newEmissions;
+	    totalEmissions += newEmissions;
 	    lastEmissionUpdate = asOfBlock;
 	}
     }
@@ -99,25 +98,25 @@ contract Climatecoin {
 	uint offset = (transaction.value / price);
 	totalOffset += offset;
 	uint coins = offset * coinsPerTonneOffset();
-	balances[msg.sender] += coins;
-	tonnesContributed[msg.sender] += offset;
-	send(offsetter, transaction.value); //subtract gas?
+	users[msg.sender].balance += coins;
+	users[msg.sender].tonnesContributed += offset;
+	send(offsetter, transaction.value); 
 
 	Mint(msg.sender, offsetter, offset, coins, amount);
 	return coins;
     }
-    function totalTonnage(address addr) constant returns (uint tonnesContributed) {
-        return tonnesContributed[addr];
+    function tonnesContributed(address addr) constant returns (uint tonnesContributed) {
+        return users.[addr].tonnesContributed;
     }
 
     //the usual currency functions
     function send(address receiver, uint amount) {
-        if (balances[msg.sender] < amount) return;
-        balances[msg.sender] -= amount;
-        balances[receiver] += amount;
+        if (users[msg.sender].balance < amount) return;
+        users[msg.sender].balance -= amount;
+        users[receiver].balance += amount;
         Send(msg.sender, receiver, amount);
     }
     function queryBalance(address addr) constant returns (uint balance) {
-        return balances[addr];
+        return users[addr].balance;
     }
 }
