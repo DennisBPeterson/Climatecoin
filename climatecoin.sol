@@ -11,7 +11,12 @@ contract Climatecoin {
     mapping (address => user) users;
 
     //approved offsetters, each with a price per tonne
-    mapping (address => uint) offsetters; 
+    struct offsetter {
+	uint price;
+	address admin;
+	bool active;
+    }
+    mapping (address => offsetter) offsetters; 
 
     uint totalEmissions = 0;
     uint totalOffset = 0;
@@ -56,18 +61,30 @@ contract Climatecoin {
 
     //Maintain list of approved offsetters
     //Admin or offsetter can update price of one tonne carbon offset
-    function setOffsetter(address offsetter, uint pricePerTonne) {
-	if (msg.sender == offsetterAdmin || msg.sender == offsetter) {
+    function addOffsetter(address offsetter, uint pricePerTonne, address admin) {
+	if (msg.sender == offsetterAdmin) {
 	    if (pricePerTonner > 0) {
-		offsetters[offsetter] = pricePerTonne;
+		offsetters[offsetter].price = pricePerTonne;
+		offsetters[offsetter].admin = admin;
+		offsetters[offsetter].active = true;
 	    }
 	}
     }
     function removeOffsetter(address offsetter) {
 	if (msg.sender == offsetterAdmin) {
-	    if (pricePerTonner > 0) {
-		offsetters[offsetter] = 0;
+	    if (offsetters[offsetter].active) {
+		offsetters[offsetter].active = false;
 	    }
+	}
+    }
+    function changeOffsetPrice(address offsetter, uint price) {
+	if (msg.sender == offsetter[offsetters].admin && offsetter[offsetters].active) {
+	    offsetters[offsetter].price = price;
+	}
+    }
+    function changeOffsetPriceAdmin(address offsetter, address admin) {
+	if (msg.sender == offsetter[offsetters].admin && offsetter[offsetters].active) {
+	    offsetters[offsetter].admin = admin;
 	}
     }
 
