@@ -94,14 +94,14 @@ contract Climatecoin {
     //start simplified: award one carboncoin for that
     //and let user specify recipient
     //a separate helper contract can select an offsetter automatically
-    function mint(uint amount, address offsetter) returns (uint coins) {
+    function mint(address offsetter) returns (uint coins) {
 	uint price = offsetters[offsetter];
 	uint offset = (transaction.value / price);
 	totalOffset += offset;
 	uint coins = offset * coinsPerTonneOffset();
 	balances[msg.sender] += coins;
 	tonnesContributed[msg.sender] += offset;
-	send(offsetter, amount);
+	send(offsetter, transaction.value); //subtract gas?
 
 	Mint(msg.sender, offsetter, offset, coins, amount);
 	return coins;
