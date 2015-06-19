@@ -112,7 +112,7 @@ contract Climatecoin {
     //a separate helper contract can select an offsetter automatically
     function mint(address offsetter) returns (uint coins) {
 	uint price = offsetters[offsetter];
-	uint offset = (transaction.value / price);
+	uint offset = (msg.value / price);
 	totalOffset += offset;
 	uint coins = offset * coinsPerTonneOffset();
 	users[msg.sender].balance += coins;
