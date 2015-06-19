@@ -63,10 +63,10 @@ contract Climatevotes {
 
 	    //does solidity have foreach?
 	    for (address a in ballots.keys) {
-		//go to climatecoin to get weighting for voter
+		uint weight = climatecoin.tonnesContributed(address);
 		uint vote = ballots[address];
-		if (vote == 1) yay += 1;
-		if (vote == 2) nay += 1;
+		if (vote == 1) yay += weight;
+		if (vote == 2) nay += weight;
 	    }
 
 	    if (yay + nay >= quorum && yay > nay) {

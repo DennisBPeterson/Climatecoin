@@ -122,8 +122,8 @@ contract Climatecoin {
 	Mint(msg.sender, offsetter, offset, coins, amount);
 	return coins;
     }
-    function tonnesContributed(address addr) constant returns (uint tonnesContributed) {
-        return users.[addr].tonnesContributed;
+    function tonnesContributed(address user) constant returns (uint tonnesContributed) {
+        return users.[user].tonnesContributed;
     }
 
     //the usual currency functions
