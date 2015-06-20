@@ -3,6 +3,13 @@ contract Climatecoin {
     address offsetterAdmin;
     address emissionAdmin;
 
+    uint totalEmissions = 0;
+    uint totalOffset = 0;
+
+    uint coinStartTime;
+    uint emissionStartTime;
+    uint emissionUpdateTime;
+
     struct user {
 	uint balance;
 	uint tonnesContributed; //lifetime total of actual tonnes offset
@@ -18,27 +25,20 @@ contract Climatecoin {
     }
     mapping (address => offsetter) offsetters; 
 
-    uint totalEmissions = 0;
-    uint totalOffset = 0;
-
-    uint coinStartTime;
-    uint emissionStartTime;
-    uint emissionUpdateTime;
-
     event Send(address from, address to, uint value);
-    event Mint(address from, address to, uint tonnesCarbon, uint mintedCoins, uint ether);
+    event Mint(address from, address to, uint tonnesCarbon, uint mintedCoins, uint etherAmount);
 
     //We start with all admins set to the contract creator
     //Emission start time is a year before contract start
     //and we hand-code the global carbon emissions in that year
-    function Climatecoin() {
+    function Climatecoin(uint _emissionStartTime, uint _tonnesEmitted) {
 	admin = msg.sender;
 	offsetterAdmin = msg.sender;
 	emissionAdmin = msg.sender;
 	coinStartTime = now;
 	emissionUpdateTime = now;
-	emissionStartTime = now - 1 year;
-	totalTonnesCarbonEmitted = 3 * 10^10; //one year emission at contract start
+	emissionStartTime = _emissionStartTime; //one year prior
+	totalEmissions = _tonnesEmitted; //one year's emissions
     }
 
     //After startup, admin can pass off power to more decentralized entities
@@ -63,7 +63,7 @@ contract Climatecoin {
     //Admin or offsetter can update price of one tonne carbon offset
     function addOffsetter(address offsetter, uint pricePerTonne, address admin) {
 	if (msg.sender == offsetterAdmin) {
-	    if (pricePerTonner > 0) {
+	    if (pricePerTonne > 0) {
 		offsetters[offsetter].price = pricePerTonne;
 		offsetters[offsetter].admin = admin;
 		offsetters[offsetter].active = true;
@@ -78,22 +78,22 @@ contract Climatecoin {
 	}
     }
     function changeOffsetPrice(address offsetter, uint price) {
-	if (msg.sender == offsetter[offsetters].admin && offsetter[offsetters].active) {
+	if (msg.sender == offsetters[offsetter].admin && offsetters[offsetter].active) {
 	    offsetters[offsetter].price = price;
 	}
     }
     function changeOffsetPriceAdmin(address offsetter, address admin) {
-	if (msg.sender == offsetter[offsetters].admin && offsetter[offsetters].active) {
+	if (msg.sender == offsetters[offsetter].admin && offsetters[offsetter].active) {
 	    offsetters[offsetter].admin = admin;
 	}
     }
 
     //Every now and then, update the global carbon emissions since last update
     //This doesn't have to be on any particular schedule
-    function addEmissions(uint newEmissions, uint asOfBlock) {
+    function addEmissions(uint newEmissions, uint updateTime) {
 	if (msg.sender == emissionAdmin) {
 	    totalEmissions += newEmissions;
-	    lastEmissionUpdate = asOfBlock;
+	    emissionUpdateTime = updateTime;
 	}
     }
 
@@ -101,9 +101,9 @@ contract Climatecoin {
     //then one offset tonne gives 100 coins
     //(that's one coin is one tonne, you might want smaller like wei)
     function coinsPerTonneOffset() returns (uint coinsPerTonne) {
-	uint emissionsPerBlock = totalEmissions / (emissionUpdate - emissionStart);
-	uint offsetPerBlock = totalOffsets / (now - coinstart);
-	return emissionsPerBlock / offsetPerBlock;
+	uint emissionsPerSecond = totalEmissions / (emissionUpdateTime - emissionStartTime);
+	uint offsetPerSecond = totalOffset / (now - coinStartTime);
+	return emissionsPerSecond / offsetPerSecond;
     }
 
     //price per tonne is the wei neeeded to offset one tonne carbon
@@ -111,19 +111,19 @@ contract Climatecoin {
     //and let user specify recipient
     //a separate helper contract can select an offsetter automatically
     function mint(address offsetter) returns (uint coins) {
-	uint price = offsetters[offsetter];
+	uint price = offsetters[offsetter].price;
 	uint offset = (msg.value / price);
 	totalOffset += offset;
-	uint coins = offset * coinsPerTonneOffset();
+	coins = offset * coinsPerTonneOffset();
 	users[msg.sender].balance += coins;
 	users[msg.sender].tonnesContributed += offset;
-	send(offsetter, transaction.value); 
+	send(offsetter, msg.value); 
 
-	Mint(msg.sender, offsetter, offset, coins, amount);
+	Mint(msg.sender, offsetter, offset, coins, msg.value);
 	return coins;
     }
     function tonnesContributed(address user) constant returns (uint tonnesContributed) {
-        return users.[user].tonnesContributed;
+        return users[user].tonnesContributed;
     }
 
     //the usual currency functions
@@ -137,3 +137,4 @@ contract Climatecoin {
         return users[addr].balance;
     }
 }
+
