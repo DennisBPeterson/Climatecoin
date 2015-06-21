@@ -4,20 +4,24 @@ contract Climatevotes {
     uint electionLength;
     uint quorum; 
 
+    struct vote {
+	address voter;
+	uint vote; //0 not voted, 1 aye, 2 nay
+    }
+
     struct ballot {
 	uint deadline;
 	bool tallied;
 	uint price;
 	address priceAdmin;
 	//votes: 0 not voted, 1 in favor, 2 against
-	mapping (uint => uint) votes;
+	mapping (uint => vote) votes;
 	mapping (address => uint) voters;
 	uint nextVoterId;
     }
+
     //address is the offsetter 
     mapping (address => ballot) ballots;
-
-
 
     function Climatevotes(address _coin, address _admin, uint _quorum, uint _electionLength) {
 	climatecoin = _coin;
@@ -65,9 +69,11 @@ contract Climatevotes {
 		b.voters[msg.sender] = voterid;
 	    }
 	    if (approves) {
-		b.votes[voterid] = 1;
+		v.votes[voterid].voter = msg.sender;
+		b.votes[voterid].vote = 1;
 	    } else {
-		b.votes[voterid] = 1;
+		v.votes[voterid].voter = msg.sender;
+		b.votes[voterid].valte = 2;
 	    }
 	}
     }
@@ -81,9 +87,9 @@ contract Climatevotes {
 	    uint nay = 0;
 
 	    for (uint i = 0; i < b.nextVoterId; i++) {
-		address voter = b.voters[i];
+		address voter = b.votes[i].voter;
 		uint weight = climatecoin.tonnesContributed(voter);
-		uint vote = b.votes[voter];
+		uint vote = b.votes[voter].vote;
 		if (vote == 1) yay += weight;
 		if (vote == 2) nay += weight;
 	    }
