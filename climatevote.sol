@@ -1,5 +1,6 @@
 contract Climatevotes {
     address climatecoin;
+    address admin;
     uint electionLength;
     uint quorum; 
 
@@ -9,25 +10,28 @@ contract Climatevotes {
 	uint price;
 	address priceAdmin;
 	//votes: 0 not voted, 1 in favor, 2 against
-	//address is a holder of climatecoins
-	mapping (address => uint) votes;
+	mapping (uint => uint) votes;
+	mapping (address => uint) voters;
+	uint nextVoterId;
     }
     //address is the offsetter 
     mapping (address => ballot) ballots;
 
+
+
     function Climatevotes(address _coin, address _admin, uint _quorum, uint _electionLength) {
 	climatecoin = _coin;
 	admin = _admin;
-	electionLength = _electionLength;
 	quorum = _quorum;
+	electionLength = _electionLength;
     }
 
     function setQuorum(uint _quorum) {
 	if (msg.sender == admin) {
-	    quorum = _quorum
+	    quorum = _quorum;
 	}
     }
-    function setAdmin(uint _admin) {
+    function setAdmin(address _admin) {
 	if (msg.sender == admin) {
 	    admin = _admin;
 	}
@@ -39,32 +43,47 @@ contract Climatevotes {
     }
 
     function propose(address offsetter) {
-	if (ballots[address].deadline == 0) {
+	if (ballots[offsetter].deadline == 0) {
 	    ballot b;
-	    b.deadline = block.number + electionPeriodInBlocks;
+	    b.deadline = block.number + electionLength;
 	    b.tallied = false;
 	    ballots[offsetter].deadline = block.number + electionLength;
 	}
     }
 
-    function vote(address offsetter, address voter, bool approves) {
-	if (ballots[offsetter].deadline > block.number) {
-	    ballots[offsetter].votes[msg.sender] = approves;
+    //mapping (uint => uint) votes;
+    //mapping (uint => address) voters;
+    //uint nextVoterId = 0;
+    function vote(address offsetter, bool approves) {
+	ballot b = ballots[offsetter];
+	if (b.deadline > block.number) {
+	    //need to trap missing offsetter
+	    uint voterid =  b.voters[msg.sender];
+	    if (voterid == 0) {
+		voterid = b.nextVoterId;
+		b.nextVoterId += 1;
+		b.voters[msg.sender] = voterid;
+	    }
+	    if (approves) {
+		b.votes[voterid] = 1;
+	    } else {
+		b.votes[voterid] = 1;
+	    }
 	}
     }
 
     function tally(address offsetter) {
-	if (ballots[offsetter].tallied) return;
 	ballot b = ballots[offsetter];
+	if (b.tallied) return;  //how do null check?
 	if (b.deadline > 0 && b.deadline < block.number) {
-	    ballots[offsetter].tallied = true;
+	    b.tallied = true;
 	    uint yay = 0;
 	    uint nay = 0;
 
-	    //does solidity have foreach?
-	    for (address a in ballots.keys) {
-		uint weight = climatecoin.tonnesContributed(address);
-		uint vote = ballots[address];
+	    for (uint i = 0; i < b.nextVoterId; i++) {
+		address voter = b.voters[i];
+		uint weight = climatecoin.tonnesContributed(voter);
+		uint vote = b.votes[voter];
 		if (vote == 1) yay += weight;
 		if (vote == 2) nay += weight;
 	    }
@@ -72,8 +91,8 @@ contract Climatevotes {
 	    if (yay + nay >= quorum && yay > nay) {
 		climatecoin.addOffsetter(
 		    offsetter, 
-		    ballots[offsetter].price, 
-		    ballots.offsetter].priceAdmin);
+		    b.price, 
+		    b.priceAdmin);
 	    }
 	}
     }
