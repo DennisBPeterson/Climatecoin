@@ -4,12 +4,12 @@ contract Climatevotes {
     uint electionLength;
     uint quorum; 
 
-    struct vote {
+    struct ballot {
 	address voter;
 	uint vote; //0 not voted, 1 aye, 2 nay
     }
 
-    struct ballot {
+    struct election {
 	uint deadline;
 	bool tallied;
 	uint price;
@@ -21,7 +21,7 @@ contract Climatevotes {
     }
 
     //address is the offsetter 
-    mapping (address => ballot) ballots;
+    mapping (address => election) elections;
 
     function Climatevotes(address _coin, address _admin, uint _quorum, uint _electionLength) {
 	climatecoin = _coin;
@@ -47,11 +47,11 @@ contract Climatevotes {
     }
 
     function propose(address offsetter) {
-	if (ballots[offsetter].deadline == 0) {
-	    ballot b;
-	    b.deadline = block.number + electionLength;
-	    b.tallied = false;
-	    ballots[offsetter].deadline = block.number + electionLength;
+	if (elections[offsetter].deadline == 0) {
+	    election e;
+	    e.deadline = block.number + electionLength;
+	    e.tallied = false;
+	    elections[offsetter] = e;
 	}
     }
 
@@ -59,37 +59,37 @@ contract Climatevotes {
     //mapping (uint => address) voters;
     //uint nextVoterId = 0;
     function vote(address offsetter, bool approves) {
-	ballot b = ballots[offsetter];
-	if (b.deadline > block.number) {
+	election e = elections[offsetter];
+	if (e.deadline > block.number) {
 	    //need to trap missing offsetter
-	    uint voterid =  b.voters[msg.sender];
+	    uint voterid =  e.voters[msg.sender];
 	    if (voterid == 0) {
-		voterid = b.nextVoterId;
-		b.nextVoterId += 1;
-		b.voters[msg.sender] = voterid;
+		voterid = e.nextVoterId;
+		e.nextVoterId += 1;
+		e.voters[msg.sender] = voterid;
 	    }
 	    if (approves) {
-		v.votes[voterid].voter = msg.sender;
-		b.votes[voterid].vote = 1;
+		e.votes[voterid].voter = msg.sender;
+		e.votes[voterid].vote = 1;
 	    } else {
-		v.votes[voterid].voter = msg.sender;
-		b.votes[voterid].valte = 2;
+		e.votes[voterid].voter = msg.sender;
+		e.votes[voterid].valte = 2;
 	    }
 	}
     }
 
     function tally(address offsetter) {
-	ballot b = ballots[offsetter];
-	if (b.tallied) return;  //how do null check?
-	if (b.deadline > 0 && b.deadline < block.number) {
-	    b.tallied = true;
+	election e = elections[offsetter];
+	if (e.tallied) return;  //how do null check?
+	if (e.deadline > 0 && e.deadline < block.number) {
+	    e.tallied = true;
 	    uint yay = 0;
 	    uint nay = 0;
 
-	    for (uint i = 0; i < b.nextVoterId; i++) {
-		address voter = b.votes[i].voter;
+	    for (uint i = 0; i < e.nextVoterId; i++) {
+		address voter = e.votes[i].voter;
 		uint weight = climatecoin.tonnesContributed(voter);
-		uint vote = b.votes[voter].vote;
+		uint vote = e.votes[voter].vote;
 		if (vote == 1) yay += weight;
 		if (vote == 2) nay += weight;
 	    }
@@ -97,8 +97,8 @@ contract Climatevotes {
 	    if (yay + nay >= quorum && yay > nay) {
 		climatecoin.addOffsetter(
 		    offsetter, 
-		    b.price, 
-		    b.priceAdmin);
+		    e.price, 
+		    e.priceAdmin);
 	    }
 	}
     }
