@@ -1,7 +1,9 @@
+//One carboncoin is awarded for one 
 contract Climatecoin {
     address admin;
     address offsetterAdmin;
     address emissionAdmin;
+    address ledger;
 
     uint totalEmissions = 0;
     uint totalOffset = 0;
@@ -17,6 +19,11 @@ contract Climatecoin {
 
     mapping (address => user) users;
 
+    //just to make up for lack of foreach 
+    //We only need this so we can migrate ledgers
+    mapping (uint => address) userids;
+    uint nextUserId = 0;
+
     //approved offsetters, each with a price per tonne
     struct offsetter {
 	uint price;
@@ -30,7 +37,7 @@ contract Climatecoin {
     //We start with all admins set to the contract creator
     //Emission start time is a year before contract start
     //and we hand-code the global carbon emissions in that year
-    function Climatecoin(uint _emissionStartTime, uint _tonnesEmitted) {
+    function Climatecoin(uint _emissionStartTime, uint _tonnesEmitted, address _ledger) {
 	admin = msg.sender;
 	offsetterAdmin = msg.sender;
 	emissionAdmin = msg.sender;
@@ -38,6 +45,7 @@ contract Climatecoin {
 	emissionUpdateTime = now;
 	emissionStartTime = _emissionStartTime; //one year prior
 	totalEmissions = _tonnesEmitted; //one year's emissions
+	ledger = _ledger;
     }
 
     //After startup, admin can pass off power to more decentralized entities
@@ -55,6 +63,17 @@ contract Climatecoin {
     function changeEmissionAdmin(address newAdmin) {
 	if (msg.sender == admin) {
 	    emissionAdmin = newAdmin;
+	}
+    }
+
+    function changeLedger(address newLedger) {
+	if (msg.sender == admin) {
+	    //loop through all users and mint them equal coins on new ledger
+	    //to do this we need an array, foreach, 
+	    //or mapping of counter userids to addresses
+	    //then it's newledger.mint(userAddress, coinBalance, totalTonnes)
+
+	    ledger = newLedger;
 	}
     }
 
@@ -110,10 +129,17 @@ contract Climatecoin {
     //and let user specify recipient
     //a separate helper contract can select an offsetter automatically
     function mint(address offsetter) returns (uint coins) {
+	if (msg.value == 0) return;
+
 	uint price = offsetters[offsetter].price;
 	uint offset = (msg.value / price);
 	totalOffset += offset;
 	coins = offset * coinsPerTonneOffset();
+
+	//just so we can iterate all users when migrating ledger 
+	user u = users[msg.sender];
+	if (u.tonnesContributed == 0) { userids[nextUserId++] = msg.sender; }
+
 	users[msg.sender].balance += coins;
 	users[msg.sender].tonnesContributed += offset;
 	send(offsetter, msg.value); 
@@ -137,38 +163,3 @@ contract Climatecoin {
     }
 }
 
-contract ClimateCoinLedger {
-    address controller;
-
-    struct user {
-	uint balance;
-	uint tonnesContributed; //lifetime total of actual tonnes offset
-    }
-
-    mapping (address => user) users;
-    
-    event Send(address from, address to, uint value);
-
-    function ClimatecoinLedger(address _controller) {controller = _controller;}
-
-    //both for routine minting and transition to new ledger
-    function mint(address user, uint coins, uint tonnes) {
-	if (msg.sender == controller) {
-	    users[user].balance += balance;
-	    users[user].tonnesContributed += tonnes;
-	}
-    }
-
-    function send(address sender, address receiver, uint amount) {
-	if (msg.sender == controller) {
-	    if (users[sender].balance < amount) return;
-	    users[msg.sender].balance -= amount;
-	    users[receiver].balance += amount;
-	    Send(msg.sender, receiver, amount);
-	}
-    }
-
-    function queryBalance(address addr) constant returns (uint balance) {
-        return users[addr].balance;
-    }
-}
