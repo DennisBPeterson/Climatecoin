@@ -15,7 +15,7 @@ contract ClimateLedger {
     //both for routine minting and transition to new ledger
     function mint(address user, uint coins, uint tonnes) {
 	if (msg.sender == controller) {
-	    users[user].balance += balance;
+	    users[user].balance += coins;
 	    users[user].tonnesContributed += tonnes;
 	}
     }

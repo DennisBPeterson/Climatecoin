@@ -156,7 +156,6 @@ contract Climatecoin {
         if (users[msg.sender].balance < amount) return;
         users[msg.sender].balance -= amount;
         users[receiver].balance += amount;
-        Send(msg.sender, receiver, amount);
     }
     function queryBalance(address addr) constant returns (uint balance) {
         return users[addr].balance;
