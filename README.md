@@ -1,6 +1,6 @@
 # Climatecoin
 
-And ERC20 token on Ethereum, designed to tackle climate change. Climate remediation efforts are funded by the inflation of the currency supply. Donate ETH to any curated project you choose, get climatecoins in return.
+An ERC20 token on Ethereum, designed to tackle climate change. Climate remediation efforts are funded by the inflation of the currency supply. Donate ETH to any curated project you choose, get climatecoins in return.
 
 The economics is similar to ETH itself: a fixed number of coins are minted per week, and divided proportionally among all the miners. It's just that our "miners" are donating funds to climate efforts, instead of burning electricity.
 
@@ -14,7 +14,7 @@ This protocol has been in development for several years, and published annually 
 
 [Climatecoin2015](https://climatecolab.org/contests/2014/shifting-behavior-for-a-changing-climate/c/proposal/1307709) made semi-finalist. Code is here in the "Climatecoin2015" branch.
 
-[Climatecoin2016](https://climatecolab.org/contests/2016/shifting-behavior-for-a-changing-climate/c/proposal/1331638() made finalist.
+[Climatecoin2016](https://climatecolab.org/contests/2016/shifting-behavior-for-a-changing-climate/c/proposal/1331638) made finalist.
 
 After the 2016 entry, an idea for governance is presented in this [blog post](http://www.blunderingcode.com/climatecoin/). 
 
